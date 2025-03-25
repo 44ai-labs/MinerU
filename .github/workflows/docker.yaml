@@ -1,0 +1,72 @@
+name: Build Docker Image & Test
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+
+jobs:
+  build-and-push-docker-image:
+    runs-on: docker-builder-fast # has to run on docker-builder
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true # need for docker build
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v3
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/44ai-mineru
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  export-sha:
+    runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.export.outputs.short_sha }}
+    steps:
+      - name: Export short SHA
+        id: export
+        run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+  test:
+    needs: [export-sha, build-backend-container]
+    runs-on: self-hosted-fast
+    container:
+      image: 44ai/44ai-backend:sha-${{ needs.export-sha.outputs.short_sha }}
+      credentials:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        # I found the 32g in the paddle paddle file which is the memory issue :-)
+      options: --shm-size=32g # otherwise we get a bus error (core dumped), do not ask me how long it took to debug this :-)
+    name: test
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    steps:
+      - name: run test in docker
+        # all the files are stored in /
+        run: |
+          magic-pdf --help
