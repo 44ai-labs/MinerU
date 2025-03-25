@@ -2,7 +2,7 @@ FROM ubuntu:24.04
 
 # without the matching nvidia-utils the GPU can not be found 
 # be sure to use the same version as the nvidia driver on the server (defined in 44ai-infra)
-RUN apt update && apt install -y ffmpeg git make wget
+RUN apt update && apt install -y ffmpeg git make wget build-essential ninja-build
 
 # fix nvidia-utils version for now
 RUN mkdir -p /nvidia-utils
