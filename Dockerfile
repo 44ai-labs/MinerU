@@ -33,6 +33,7 @@ RUN python scripts/download_models.py
 COPY magic_pdf/ magic_pdf/
 COPY setup.py .
 
+RUN uv pip install --system torch
 RUN uv pip install --system --no-build-isolation 'detectron2 @ git+https://github.com/facebookresearch/detectron2.git@main' 
 RUN uv pip install --system -e .
 
