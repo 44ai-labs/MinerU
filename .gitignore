@@ -51,3 +51,9 @@ _build/
 
 
 output/
+
+build/
+
+*.egg-info/
+
+output_path
