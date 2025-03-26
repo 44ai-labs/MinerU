@@ -33,9 +33,15 @@ RUN python scripts/download_models.py
 COPY magic_pdf/ magic_pdf/
 COPY setup.py .
 
+
 RUN uv pip install --system torch
 RUN uv pip install --system --no-build-isolation 'detectron2 @ git+https://github.com/facebookresearch/detectron2.git@main' 
-RUN uv pip install --system -e .
+
+# need for python local build
+COPY README.md .
+COPY requirements.txt .
+RUN uv pip install --system -e ".[full]"
+
 
 # GPU Accel
 RUN uv pip install --system paddlepaddle-gpu==3.0.0rc1 -i https://www.paddlepaddle.org.cn/packages/stable/cu123/
