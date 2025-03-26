@@ -54,7 +54,7 @@ jobs:
     needs: [export-sha, build-and-push-docker-image]
     runs-on: self-hosted-fast
     container:
-      image: 44ai/44ai-backend:sha-${{ needs.export-sha.outputs.short_sha }}
+      image: 44ai/44ai-mineru:sha-${{ needs.export-sha.outputs.short_sha }}
       credentials:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
