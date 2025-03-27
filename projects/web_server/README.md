@@ -28,3 +28,13 @@ uv pip install paddlepaddle-gpu==3.0.0rc1 -i https://www.paddlepaddle.org.cn/pac
 # install cudnn manually -> libcudnn.so.8: cannot open shared object file: No such file or directory
 mamba install cudnn=8 -c conda-forge
 ```
+
+
+## Start with custom Path
+
+```bash
+# install
+python projects/web_server/download_models.py
+# needs to be absolute path
+MINERU_TOOLS_CONFIG_JSON=$PWD/projects/web_server/magic-pdf-server.json python projects/web_server/simple_test.py
+```
