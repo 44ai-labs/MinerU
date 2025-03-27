@@ -57,3 +57,4 @@ build/
 *.egg-info/
 
 output_path
+test_files
