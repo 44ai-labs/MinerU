@@ -38,3 +38,12 @@ python projects/web_server/download_models.py
 # needs to be absolute path
 MINERU_TOOLS_CONFIG_JSON=$PWD/projects/web_server/magic-pdf-server.json python projects/web_server/simple_test.py
 ```
+
+### Start and test Server
+
+```bash
+# start server
+MINERU_TOOLS_CONFIG_JSON=$PWD/projects/web_server/magic-pdf-server.json python projects/web_server/server.py
+# test
+python projects/web_server/test_client.py
+```
