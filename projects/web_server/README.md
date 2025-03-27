@@ -43,6 +43,7 @@ MINERU_TOOLS_CONFIG_JSON=$PWD/projects/web_server/magic-pdf-server.json python p
 
 ```bash
 # start server
+export PYTHONPATH=.
 MINERU_TOOLS_CONFIG_JSON=$PWD/projects/web_server/magic-pdf-server.json python projects/web_server/server.py
 # test
 python projects/web_server/test_client.py
