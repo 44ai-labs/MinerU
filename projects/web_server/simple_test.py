@@ -60,10 +60,10 @@ def process_pdf(
         pipe_result = infer_result.pipe_txt_mode(image_writer)
     else:  # auto
         if ds.classify() == SupportedPdfParseMethod.OCR:
-            infer_result = ds.apply(doc_analyze, ocr=True)
+            infer_result = ds.apply(doc_analyze, ocr=True, formula_enable=False)
             pipe_result = infer_result.pipe_ocr_mode(image_writer)
         else:
-            infer_result = ds.apply(doc_analyze, ocr=False)
+            infer_result = ds.apply(doc_analyze, ocr=False, formula_enable=False)
             pipe_result = infer_result.pipe_txt_mode(image_writer)
 
     return infer_result, pipe_result
