@@ -7,7 +7,7 @@ import uvicorn
 import asyncio
 import tempfile
 from io import StringIO
-from typing import Tuple
+from typing import Tuple, List
 
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
@@ -26,10 +26,14 @@ from magic_pdf.data.data_reader_writer import (
     FileBasedDataWriter,
 )
 
+from projects.web_server.server_types import MiddleJson, StructuredNode, StructuredNodeMetadata, UnstructuredMetadata
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.model_lock = asyncio.Lock()
     yield
+
 
 # -----------------------------------------------------------------------------
 # 1) CREATE FASTAPI APP + STARTUP LOCK
@@ -92,16 +96,72 @@ def process_pdf(
     return infer_result, pipe_result
 
 
+
+from typing import List
+
+def middlejson_para_blocks_to_nodes(middle_json: MiddleJson) -> List[StructuredNode]:
+    """
+    For each page in middle_json.pdf_info:
+      - Iterate over para_blocks.
+      - Merge all lines (and spans) in that block into a single text string.
+      - Create one StructuredNode per block.
+    Returns a flat list of StructuredNode objects.
+    """
+    all_nodes: List[StructuredNode] = []
+
+    for page_data in middle_json.pdf_info:
+        page_idx = page_data.page_idx
+        size = page_data.page_size  # e.g. [width, height]
+
+        # Gather every "para_block" in this page
+        for block in page_data.para_blocks:
+            # Merge lines/spans
+            block_lines = block.lines  # usually a list of Line
+            line_texts = []
+            for line in block_lines:
+                # Each line can have multiple spans
+                span_texts = [span.content for span in line.spans]
+                # Join all spans in one line with a space, then strip
+                single_line_str = " ".join(span_texts).strip()
+                if single_line_str:
+                    line_texts.append(single_line_str)
+
+            # Merge all lines in the block with a newline (or space)
+            block_text = "\n".join(line_texts).strip()
+
+            # Collect metadata
+            metadata_obj = UnstructuredMetadata(
+                page_number=page_idx,
+                block_type=block.type,
+                bbox=block.bbox if block.bbox else None,
+                page_width=size[0] if len(size) > 0 else None,
+                page_height=size[1] if len(size) > 1 else None,
+            )
+
+            node_meta = StructuredNodeMetadata(
+                unstructured_metadata=metadata_obj
+            )
+
+            node = StructuredNode(
+                text=block_text,
+                metadata=node_meta
+            )
+            all_nodes.append(node)
+
+    return all_nodes
+
+
+
 # -----------------------------------------------------------------------------
 # 4) ENDPOINT: EXTRACT _middle.json
 # -----------------------------------------------------------------------------
-@app.post("/analyze-file")
+@app.post("/analyze-file", response_model=StructuredNode)
 async def extract_middle_file(
     file: UploadFile = File(...),
-):
+) -> StructuredNode:
     """
     Accepts a PDF file upload, processes it (one at a time),
-    and returns the _middle.json content. Temporary files are 
+    and returns the _middle.json content. Temporary files are
     used/removed automatically.
     """
 
@@ -130,7 +190,14 @@ async def extract_middle_file(
     # Once we exit the `async with app.state.model_lock`, the lock is released
 
     # Return the middle_json as the response
-    return JSONResponse(content=middle_json)
+
+    typed_middle = MiddleJson(**middle_json)
+    # return typed_middle
+    with open("middle.json", "w") as f:
+        f.write(json.dumps(middle_json, indent=2))
+    structured_nodes = middlejson_para_blocks_to_nodes(typed_middle)
+    return structured_nodes
+
 
 
 # -----------------------------------------------------------------------------
