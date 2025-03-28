@@ -33,7 +33,7 @@ class ParsedTable(BaseModel):
     type: str
     bbox: List[float]
     blocks: List[TableBlock]
-    index: float
+    index: Optional[float] = None
     page_num: Optional[str] = None
     page_size: Optional[List[float]] = None
 
@@ -47,14 +47,14 @@ class DiscardedBlock(BaseModel):
 class PreprocBlockLine(BaseModel):
     bbox: List[int]
     spans: List[Span]
-    index: Union[int, float]
+    index: Optional[Union[int, float]] = None
 
 
 class PreprocBlock(BaseModel):
     type: str
     bbox: List[int]
     lines: Optional[List[PreprocBlockLine]] = None
-    index: Union[int, float]
+    index: Optional[Union[int, float]] = None
     page_num: Optional[str] = None
     page_size: Optional[List[float]] = None
     bbox_fs: Optional[List[int]] = None
@@ -117,41 +117,3 @@ class MinerUReturn(BaseModel):
     info: Info
     content_list: List[ContentItem]
     md_content: Optional[str] = None
-
-
-# -----------------------------------------------------------------------------
-# Output types
-# -----------------------------------------------------------------------------
-
-
-class UnstructuredMetadata(BaseModel):
-    """
-    Represents the data you build up in `metadata` (like category, page_width, etc.).
-    """
-
-    category: Optional[str] = None
-    page_height: Optional[float] = None
-    page_width: Optional[float] = None
-    # Each bbox coordinate is [x, y], so store it as a list of lists
-    bbox: Optional[List[List[float]]] = None
-    page_number: Optional[int] = None
-    table_markdown: Optional[str] = None
-
-
-class StructuredNodeMetadata(BaseModel):
-    """
-    Represents the `metadata` field on StructuredNode, which itself
-    has a sub-field called `unstructured_metadata`.
-    """
-
-    unstructured_metadata: UnstructuredMetadata
-
-
-class StructuredNode(BaseModel):
-    """
-    The main node model with `text` and a `metadata` dict that wraps
-    `unstructured_metadata`.
-    """
-
-    text: str
-    metadata: StructuredNodeMetadata
