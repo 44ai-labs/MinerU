@@ -14,13 +14,9 @@ RUN cd /nvidia-utils && apt install ./*.deb -y
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh && bash miniconda.sh -b -p /root/miniconda3 && rm miniconda.sh && echo "export PATH=/root/miniconda3/bin:$PATH" >> ~/.bashrc
 ENV PATH="/root/miniconda3/bin:$PATH"
 
-# install the proper libcudnn version
+# install the proper libcudnn version =8
 
 RUN conda install python=3.12 cudnn=8 -c conda-forge
-# to get the CONDA_PREFIX
-# run it in a running container:  echo $CONDA_PREFIX
-# it is /home/ray/anaconda3
-# ENV LD_LIBRARY_PATH="/root/miniconda3/lib:$LD_LIBRARY_PATH"
 
 RUN pip install uv
 
