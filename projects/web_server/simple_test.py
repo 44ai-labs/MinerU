@@ -177,5 +177,6 @@ if __name__ == "__main__":
     all_results = process_files(file_list, output_dir="output_path")
 
     # Write all data into a single JSON
-    with open("output.json", "w") as f:
-        json.dump(all_results, f, indent=4)
+    for idx, file_data in enumerate(all_results["files"]):
+        with open(f"output_{idx}.json", "w") as f:
+            json.dump(file_data, f, indent=4)
