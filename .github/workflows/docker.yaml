@@ -125,6 +125,13 @@ jobs:
           kubectl apply -f k8s/deploy.yaml -n $NAMESPACE
       - name: Wait until Mineru Container is ready (downloaded)
         run: |
+          echo "Describing pod for debugging (10 times, 5s apart)..."
+          for i in $(seq 1 10); do
+            echo "===> Describe attempt #$i"
+            kubectl describe pod -l app=mineru-44ai -n $NAMESPACE
+            sleep 10
+          done
+
           kubectl wait --for=condition=ready pod -l app=mineru-44ai -n $NAMESPACE --timeout=1200s
           kubectl get pods -n $NAMESPACE
 
