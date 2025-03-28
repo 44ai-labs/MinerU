@@ -1,96 +1,122 @@
 from typing import List, Optional, Union
 from pydantic import BaseModel, Field
 
+from typing import List, Optional, Union, Any
+from pydantic import BaseModel
 
-# -----------------------------------------------------------------------------
-# Lowest-level: a single "span" on a line
-# -----------------------------------------------------------------------------
+
 class Span(BaseModel):
-    bbox: List[float]
-    score: float
-    content: str
+    bbox: List[float]  # [left, top, right, bottom]
+    score: Optional[float] = None  # might be missing
+    content: Optional[str] = None
+    html: Optional[str] = None
     type: str
+    image_path: Optional[str] = None
 
 
-# -----------------------------------------------------------------------------
-# Next level: each "line" has a bbox, spans[], etc.
-# -----------------------------------------------------------------------------
 class Line(BaseModel):
     bbox: List[float]
     spans: List[Span]
     index: Optional[int] = None
-    # Some lines in your data had "cross_page": true, so you can add:
-    # cross_page: Optional[bool] = None
 
 
-# -----------------------------------------------------------------------------
-# A "block" under preproc_blocks or para_blocks, e.g. type=="text"
-# -----------------------------------------------------------------------------
-class PreprocBlock(BaseModel):
+class TableBlock(BaseModel):
     type: str
     bbox: List[float]
-    # lines can be empty or omitted, so we allow an empty list as default
-    lines: List[Line] = Field(default_factory=list)
+    group_id: Optional[int] = None
+    lines: Optional[List[Line]] = None
+    index: Optional[float] = None
+    virtual_lines: Optional[List[Any]] = None
 
-    # index can be float (e.g. 7.5) or int
-    index: Optional[Union[float, int]] = None
 
-    # Some optional fields that appear in para_blocks or text blocks
+class ParsedTable(BaseModel):
+    type: str
+    bbox: List[float]
+    blocks: List[TableBlock]
+    index: float
     page_num: Optional[str] = None
     page_size: Optional[List[float]] = None
-    bbox_fs: Optional[List[float]] = None
-    lines_deleted: Optional[bool] = None
 
 
-# -----------------------------------------------------------------------------
-# Discarded blocks have a "type":"discarded", a bbox, lines...
-# -----------------------------------------------------------------------------
 class DiscardedBlock(BaseModel):
     type: str
     bbox: List[float]
-    lines: List[Line] = Field(default_factory=list)
+    lines: Optional[List[Line]] = None
 
 
-# -----------------------------------------------------------------------------
-# "para_blocks" can have the same shape as PreprocBlock
-# (including lines, index, etc.)
-# -----------------------------------------------------------------------------
-class ParaBlock(PreprocBlock):
-    pass
+class PreprocBlockLine(BaseModel):
+    bbox: List[int]
+    spans: List[Span]
+    index: Union[int, float]
 
 
-# -----------------------------------------------------------------------------
-# The pdf_info[] list, each item has preproc_blocks, page_idx, etc.
-# -----------------------------------------------------------------------------
+class PreprocBlock(BaseModel):
+    type: str
+    bbox: List[int]
+    lines: Optional[List[PreprocBlockLine]] = None
+    index: Union[int, float]
+    page_num: Optional[str] = None
+    page_size: Optional[List[float]] = None
+    bbox_fs: Optional[List[int]] = None
+
+
 class PdfInfo(BaseModel):
     preproc_blocks: List[PreprocBlock]
-    layout_bboxes: List = Field(default_factory=list)
+    layout_bboxes: List[List[float]] = []
     page_idx: int
     page_size: List[float]
-
-    # The original JSON uses an underscore name, so use alias:
-    layout_tree: List = Field(default_factory=list, alias="_layout_tree")
-
-    images: List = Field(default_factory=list)
-    tables: List = Field(default_factory=list)
-    interline_equations: List = Field(default_factory=list)
-    discarded_blocks: List[DiscardedBlock] = Field(default_factory=list)
-
-    need_drop: bool
-    drop_reason: List = Field(default_factory=list)
-
-    para_blocks: List[ParaBlock] = Field(default_factory=list)
+    _layout_tree: List[Any] = []
+    images: List[Any] = []
+    tables: List[ParsedTable] = []
+    interline_equations: List[Any] = []
+    discarded_blocks: List[DiscardedBlock] = []
+    need_drop: Optional[bool] = None
+    drop_reason: List[str] = []
+    para_blocks: List[PreprocBlock]
 
 
-# -----------------------------------------------------------------------------
-# The top-level object, with "pdf_info" and also _parse_type, _version_name
-# -----------------------------------------------------------------------------
-class MiddleJson(BaseModel):
+class LayoutDet(BaseModel):
+    category_id: int
+    poly: List[Union[int, float]]
+    score: float
+    html: Optional[str] = None
+    text: Optional[str] = None
+
+
+class PageInfo(BaseModel):
+    page_no: int
+    width: int
+    height: int
+
+
+class Layout(BaseModel):
+    layout_dets: List[LayoutDet]
+    page_info: PageInfo
+
+
+class Info(BaseModel):
     pdf_info: List[PdfInfo]
+    _parse_type: Optional[str] = None
+    _version_name: Optional[str] = None
 
-    # Original JSON fields had leading underscores, so alias them:
-    parse_type: Optional[str] = Field(alias="_parse_type")
-    version_name: Optional[str] = Field(alias="_version_name")
+
+class ContentItem(BaseModel):
+    type: str
+    text: Optional[str] = None
+    page_idx: int
+    text_level: Optional[int] = None
+    img_path: Optional[str] = None
+    table_caption: Optional[List[str]] = None
+    table_footnote: Optional[List[str]] = None
+    table_body: Optional[str] = None
+
+
+class MinerUReturn(BaseModel):
+    file: Optional[str] = None
+    layout: List[Layout]
+    info: Info
+    content_list: List[ContentItem]
+    md_content: Optional[str] = None
 
 
 # -----------------------------------------------------------------------------
