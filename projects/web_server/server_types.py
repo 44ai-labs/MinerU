@@ -1,7 +1,5 @@
-from typing import List, Optional, Union
-from pydantic import BaseModel, Field
+from typing import Any, List, Optional, Union
 
-from typing import List, Optional, Union, Any
 from pydantic import BaseModel
 
 
@@ -47,7 +45,7 @@ class DiscardedBlock(BaseModel):
 class PreprocBlockLine(BaseModel):
     bbox: List[int]
     spans: List[Span]
-    index: Optional[Union[int, float]] = None
+    index: Optional[Union[int, float, None]] = None
 
 
 class PreprocBlock(BaseModel):
