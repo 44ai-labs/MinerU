@@ -70,3 +70,88 @@ jobs:
         # all the files are stored in /
         run: |
           magic-pdf --help
+
+  tests-k8s:
+    runs-on: self-hosted-fast # has to run on a github hosted runner
+    needs: build-and-push-docker-image
+    env:
+      NAMESPACE: mineru-44ai # same as production, as for redis service dns resolver
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Get short commit SHA
+        id: vars
+        run: echo "::set-output name=short_sha::${GITHUB_SHA::7}"
+      - name: Current Image Tag
+        run: |
+          echo "image tag sha-${{ steps.vars.outputs.short_sha }}"
+      - name: Install dependecies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl wget git
+      - name: Install k3d
+        run: |
+          curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash
+      - name: Create k3d cluster
+        run: |
+          k3d cluster create mycluster --wait --port "30001:30001@server:0"
+      - name: Get kubeconfig
+        run: |
+          k3d kubeconfig get mycluster > kubeconfig.yaml
+          cat kubeconfig.yaml
+      - name: Set KUBECONFIG environment variable
+        run: echo "KUBECONFIG=$(pwd)/kubeconfig.yaml" >> $GITHUB_ENV
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+      - name: Get Nodes & Infos
+        run: |
+          kubectl get pods --all-namespaces
+      - name: Set KUBECONFIG environment variable
+        run: echo "KUBECONFIG=$(pwd)/kubeconfig.yaml" >> $GITHUB_ENV
+      - name: Create namespace
+        run: |
+          kubectl create namespace $NAMESPACE
+      - name: Create DockerHub secret file
+        # This step writes the YAML from your GitHub secret into k8s/dockerhub-secret.yaml
+        run: |
+          echo "${{ secrets.DOCKERHUB_SECRET_FILE }}" > k8s/dockerhub-secret.yaml
+      - name: Install Dockerhub secret
+        run: |
+          kubectl apply -f k8s/dockerhub-secret.yaml -n $NAMESPACE
+      # we replace the image tag with the current one
+      - name: Install MinerU
+        run: |
+          sed -i 's|44ai/44ai-mineru:main|44ai/44ai-mineru:sha-${{ steps.vars.outputs.short_sha }}|g' k8s/deploy-structure.yaml
+          kubectl apply -f k8s/deploy.yaml -n $NAMESPACE
+      - name: Wait until Mineru Container is ready (downloaded)
+        run: |
+          kubectl wait --for=condition=ready pod -l app=mineru-44ai -n $NAMESPACE --timeout=1200s
+          kubectl get pods -n $NAMESPACE
+
+      - name: Get Cluster IP
+        id: cluster-ip
+        run: |
+          CLUSTER_IP=127.0.0.1
+          echo "Using Cluster IP: $CLUSTER_IP"
+          echo "cluster_ip=$CLUSTER_IP" >> $GITHUB_OUTPUT
+      - name: Download Test Files
+        # TODO: change links
+        run: |
+          curl -O https://raw.githubusercontent.com/44ai/44ai-structure/main/tests/test_files/fever.json
+          curl -O https://raw.githubusercontent.com/44ai/44ai-structure/main/tests/test_files/fever.pdf
+      - name: Simple PDF Test
+        run: |
+          CLUSTER_IP="${{ steps.cluster-ip.outputs.cluster_ip }}"
+          echo "Using Cluster IP: $CLUSTER_IP"
+          curl -X POST http://$CLUSTER_IP:30001/text/ -H "Content-Type: application/json" -H "Authorization: Bearer 075635889ea77b199e19a88da8ffebdb8ab9049c7c5178bcf432c42e36247156" -d '["Der Patient hat Fieber."]'
+
+      - name: Copy Logs
+        if: always()
+        run: |
+          ./scripts/copy_logs.sh
+      - name: Upload Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs
+          path: logs/
