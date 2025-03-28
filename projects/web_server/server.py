@@ -28,9 +28,7 @@ from magic_pdf.data.data_reader_writer import (
     FileBasedDataWriter,
 )
 
-from projects.web_server.server_types import (
-    MinerUReturn
-)
+from projects.web_server.server_types import MinerUReturn
 
 
 @asynccontextmanager
@@ -86,10 +84,15 @@ def process_file(
     pipe_result: PipeResult = None
 
     if ds.classify() == SupportedPdfParseMethod.OCR:
-        infer_result = ds.apply(doc_analyze, ocr=True, formula_enable=False)
+        # TODO(jannis): pass langauge as a parameter
+        infer_result = ds.apply(
+            doc_analyze, ocr=True, formula_enable=False, lang="german"
+        )
         pipe_result = infer_result.pipe_ocr_mode(image_writer)
     else:
-        infer_result = ds.apply(doc_analyze, ocr=False, formula_enable=False)
+        infer_result = ds.apply(
+            doc_analyze, ocr=False, formula_enable=False, lang="german"
+        )
         pipe_result = infer_result.pipe_txt_mode(image_writer)
 
     return infer_result, pipe_result
