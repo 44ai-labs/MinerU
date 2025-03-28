@@ -174,11 +174,6 @@ async def extract_middle_file(
             #     for img_path in image_paths
             # }
 
-    # Once we exit the `with tempfile.TemporaryDirectory()`, all files are removed
-    # Once we exit the `async with app.state.model_lock`, the lock is released
-
-    # Return the middle_json as the response
-
     typed_return = MinerUReturn(**file_data)
     return typed_return
 
@@ -188,4 +183,5 @@ async def extract_middle_file(
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     # Run with a single worker so the lock effectively ensures single concurrency
-    uvicorn.run(app, host="0.0.0.0", port=4419)
+    port = int(os.environ.get("SERVER_PORT", 4419))
+    uvicorn.run(app, host="0.0.0.0", port=port)
