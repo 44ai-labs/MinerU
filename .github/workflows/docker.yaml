@@ -121,7 +121,7 @@ jobs:
       # we replace the image tag with the current one
       - name: Install MinerU
         run: |
-          sed -i 's|44ai/44ai-mineru:main|44ai/44ai-mineru:sha-${{ steps.vars.outputs.short_sha }}|g' k8s/deploy-structure.yaml
+          sed -i 's|44ai/44ai-mineru:main|44ai/44ai-mineru:sha-${{ steps.vars.outputs.short_sha }}|g' k8s/deploy.yaml
           kubectl apply -f k8s/deploy.yaml -n $NAMESPACE
       - name: Wait until Mineru Container is ready (downloaded)
         run: |
