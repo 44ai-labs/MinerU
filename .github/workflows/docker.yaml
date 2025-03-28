@@ -141,6 +141,10 @@ jobs:
           CLUSTER_IP=127.0.0.1
           echo "Using Cluster IP: $CLUSTER_IP"
           echo "cluster_ip=$CLUSTER_IP" >> $GITHUB_OUTPUT
+      - name: Wait until server is started
+        run: |
+          echo "Waiting for server to start..."
+          sleep 30
       - name: Download Test Files
         # TODO: change links
         run: |
