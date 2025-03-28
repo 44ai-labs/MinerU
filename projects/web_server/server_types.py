@@ -43,19 +43,19 @@ class DiscardedBlock(BaseModel):
 
 
 class PreprocBlockLine(BaseModel):
-    bbox: List[int]
+    bbox: List[Union[int, float]]
     spans: List[Span]
     index: Optional[Union[int, float, None]] = None
 
 
 class PreprocBlock(BaseModel):
     type: str
-    bbox: List[int]
+    bbox: List[Union[int, float]]
     lines: Optional[List[PreprocBlockLine]] = None
     index: Optional[Union[int, float]] = None
     page_num: Optional[str] = None
     page_size: Optional[List[float]] = None
-    bbox_fs: Optional[List[int]] = None
+    bbox_fs: Optional[List[Union[float, int]]] = None
 
 
 class PdfInfo(BaseModel):
