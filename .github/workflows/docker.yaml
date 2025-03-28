@@ -137,13 +137,12 @@ jobs:
       - name: Download Test Files
         # TODO: change links
         run: |
-          curl -O https://raw.githubusercontent.com/44ai/44ai-structure/main/tests/test_files/fever.json
-          curl -O https://raw.githubusercontent.com/44ai/44ai-structure/main/tests/test_files/fever.pdf
+          curl -O https://raw.githubusercontent.com/44ai-labs/MinerU/server/demo/small_ocr.pdf
       - name: Simple PDF Test
         run: |
           CLUSTER_IP="${{ steps.cluster-ip.outputs.cluster_ip }}"
           echo "Using Cluster IP: $CLUSTER_IP"
-          curl -X POST http://$CLUSTER_IP:30001/text/ -H "Content-Type: application/json" -H "Authorization: Bearer 075635889ea77b199e19a88da8ffebdb8ab9049c7c5178bcf432c42e36247156" -d '["Der Patient hat Fieber."]'
+          curl -X POST "http://$CLUSTER_IP:30001/analyze-file" -F "file=@small_ocr.pdf;type=application/pdf"
 
       - name: Copy Logs
         if: always()
