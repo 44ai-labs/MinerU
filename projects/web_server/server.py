@@ -7,12 +7,11 @@ import uvicorn
 import asyncio
 import tempfile
 from io import StringIO
-from typing import Tuple, List, Literal
+from typing import Tuple, Literal, Optional
 from base64 import b64encode
 from glob import glob
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, File, UploadFile, HTTPException, Header, Depends, Request
 
 # ------------
 # Your libraries
@@ -34,6 +33,7 @@ from projects.web_server.server_types import MinerUReturn
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.model_lock = asyncio.Lock()
+    app.state.api_key = os.environ.get("API_KEY", "mamaistdiebeste")
     yield
 
 
@@ -104,12 +104,25 @@ def encode_image(image_path: str) -> str:
         return b64encode(f.read()).decode()
 
 
+def verify_bearer_token(request: Request, authorization: Optional[str] = Header(None)):
+    expected_key = request.app.state.api_key
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401, detail="Missing or malformed Authorization header"
+        )
+
+    token = authorization.split("Bearer ")[1].strip()
+    if token != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+
+
 # -----------------------------------------------------------------------------
 # 4) ENDPOINT: EXTRACT _middle.json
 # -----------------------------------------------------------------------------
 @app.post("/analyze-file", response_model=MinerUReturn)
-async def extract_middle_file(
+async def analyze_file(
     file: UploadFile = File(...),
+    _: str = Depends(verify_bearer_token),
 ) -> MinerUReturn:
     """
     Accepts a PDF file upload, processes it (one at a time),
