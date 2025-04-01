@@ -58,3 +58,5 @@ build/
 
 output_path
 test_files
+
+k8s_hidden/
