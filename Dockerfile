@@ -52,6 +52,7 @@ COPY Makefile .
 ENV SERVER_PORT="8000"
 # to overwrite the fallback into the conda env which has an too old version...
 ENV LD_PRELOAD="/usr/lib/x86_64-linux-gnu/libstdc++.so.6"
+ENV API_KEY="mamaistdiebeste"
 
 EXPOSE 8000
 CMD ["make", "start"]
