@@ -14,9 +14,10 @@ RUN cd /nvidia-utils && apt install ./*.deb -y
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh && bash miniconda.sh -b -p /root/miniconda3 && rm miniconda.sh && echo "export PATH=/root/miniconda3/bin:$PATH" >> ~/.bashrc
 ENV PATH="/root/miniconda3/bin:$PATH"
 
-# install the proper libcudnn version =8
+# install the proper libcudnn version =8.0 -> 8 installs 8.2.1 but torch is compiled with 8.9
 
-RUN conda install python=3.12 cudnn=8 -c conda-forge
+RUN conda install python=3.12 cudnn=8.9 -c conda-forge
+
 
 RUN pip install uv
 
