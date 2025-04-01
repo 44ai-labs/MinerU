@@ -152,7 +152,9 @@ jobs:
         run: |
           CLUSTER_IP="${{ steps.cluster-ip.outputs.cluster_ip }}"
           echo "Using Cluster IP: $CLUSTER_IP"
-          curl -X POST "http://$CLUSTER_IP:30001/analyze-file" -F "file=@small_ocr.pdf;type=application/pdf"
+          export API_KEY="mamaistdiebeste"
+          curl -X POST "http://$CLUSTER_IP:30001/analyze-file" -H "Authorization: Bearer $API_KEY" \
+            -F "file=@small_ocr.pdf;type=application/pdf"
 
       - name: Copy Logs
         if: always()
