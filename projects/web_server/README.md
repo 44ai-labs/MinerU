@@ -48,3 +48,29 @@ MINERU_TOOLS_CONFIG_JSON=$PWD/projects/web_server/magic-pdf-server.json python p
 # test
 python projects/web_server/test_client.py
 ```
+
+
+### Local k8s test
+
+```bash
+# install go
+wget https://go.dev/dl/go1.24.1.linux-amd64.tar.gz
+rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.24.1.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+export PATH=$PATH:$(go env GOPATH)/bin
+# install kind
+go install sigs.k8s.io/kind@v0.27.0 && kind create cluster
+
+# install the stack :-)
+# install kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+# cluster config
+kind export kubeconfig
+
+kubectl create ns mineru-44ai
+
+kubectl apply -f k8s_hidden/dockerhub-secret.yaml
+kubectl apply -f k8s/deploy.yaml
+
+```
