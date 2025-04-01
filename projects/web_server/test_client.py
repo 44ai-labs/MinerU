@@ -15,8 +15,13 @@ async def test_extract_middle_json(client: httpx.AsyncClient, pdf_path: str) -> 
         "file": (pdf_path, pdf_bytes, "application/pdf"),
     }
 
+    # Add Authorization header with Bearer token
+    api_key = "mamaistdiebeste"
+    headers = {
+        "Authorization": f"Bearer {api_key}"
+    }
     # Make the async request
-    response = await client.post(url, files=files)
+    response = await client.post(url, files=files, headers=headers)
     if response.status_code == 200:
         print("Successfully got response:")
         print(response.json())
