@@ -146,7 +146,6 @@ jobs:
           echo "Waiting for server to start..."
           sleep 30
       - name: Download Test Files
-        # TODO: change links
         run: |
           curl -O https://raw.githubusercontent.com/44ai-labs/MinerU/server/demo/small_ocr.pdf
       - name: Simple PDF Test
