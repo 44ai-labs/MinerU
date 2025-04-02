@@ -74,3 +74,11 @@ kubectl apply -f k8s_hidden/dockerhub-secret.yaml
 kubectl apply -f k8s/deploy.yaml
 
 ```
+
+
+### Use dive to inspect the image
+
+```bash
+https://github.com/wagoodman/dive/releases/download/v0.13.1/dive_0.13.1_linux_amd64.deb
+sudo apt install ./dive_0.13.1_linux_amd64.deb
+```
