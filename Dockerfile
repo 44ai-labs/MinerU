@@ -52,9 +52,10 @@ COPY requirements.txt .
 # RUN uv pip install --no-build-isolation 'detectron2 @ git+https://github.com/facebookresearch/detectron2.git@main' 
 RUN uv pip install torch && \
   uv pip install --no-build-isolation 'detectron2 @ git+https://github.com/facebookresearch/detectron2.git@main' && \
-  uv pip install -e ".[full]" && \
+  uv pip install ".[full]" && \
   uv pip install paddlepaddle-gpu==3.0.0rc1 -i https://www.paddlepaddle.org.cn/packages/stable/cu123/ && \
-  uv pip install -r projects/web_server/requirements.txt
+  uv pip install -r projects/web_server/requirements.txt && \
+  rm -rf ~/.cache/uv ~/.cache/pip
 
 
 # GPU Accel
