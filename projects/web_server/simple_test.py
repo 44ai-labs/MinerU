@@ -1,5 +1,6 @@
 import os
 from io import StringIO
+import subprocess
 import json
 from typing import Literal, List
 from base64 import b64encode
@@ -166,14 +167,31 @@ def process_files(file_paths: List[str], output_dir: str = "output_path") -> dic
 
 if __name__ == "__main__":
     # Example usage:
-    file_list = [
-        "test_files/dokument_1.pdf",
-        "test_files/dokument_12_scanned.jpeg",
-        "test_files/dokument_13_scanned.pdf",
-        "test_files/labor_04.pdf",
-        "test_files/labor_7_scanned.jpeg",
-        # Add more files as needed
-    ]
+    # this file is used for downloading all the necessary models in docker container
+
+    # file_list = [
+    #     "test_files/dokument_1.pdf",
+    #     "test_files/dokument_12_scanned.jpeg",
+    #     "test_files/dokument_13_scanned.pdf",
+    #     "test_files/labor_04.pdf",
+    #     "test_files/labor_7_scanned.jpeg",
+    #     # Add more files as needed
+    # ]
+    file_list = []
+
+    # download file for initial setup in docker container
+    url = "https://raw.githubusercontent.com/44ai-labs/MinerU/server/demo/small_ocr.pdf"
+    filename = "small_ocr.pdf"
+
+    try:
+        subprocess.run(['curl', '-f', '-O', url], check=True)
+        print(f"Successfully downloaded or replaced {filename}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error downloading {url}: {e}")
+    except FileNotFoundError:
+        print("Error: The 'curl' command was not found. Make sure it's installed and in your system's PATH.")
+    file_list.append(filename)
+
     all_results = process_files(file_list, output_dir="output_path")
 
     # Write all data into a single JSON
