@@ -26,7 +26,7 @@ python scripts/download_models_hf.py
 ```bash
 uv pip install paddlepaddle-gpu==3.0.0rc1 -i https://www.paddlepaddle.org.cn/packages/stable/cu123/
 # install cudnn manually -> libcudnn.so.8: cannot open shared object file: No such file or directory
-mamba install cudnn=8 -c conda-forge
+mamba install cudnn=8.9 -c conda-forge
 ```
 
 
