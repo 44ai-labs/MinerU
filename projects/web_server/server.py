@@ -179,13 +179,13 @@ async def analyze_file(
             file_data["md_content"] = md_content
 
             # Encode images
-            # image_paths = glob(os.path.join(output_image_path, "*.jpg"))
-            # file_data["images"] = {
-            #     os.path.basename(
-            #         img_path
-            #     ): f"data:image/jpeg;base64,{encode_image(img_path)}"
-            #     for img_path in image_paths
-            # }
+            image_paths = glob(os.path.join(output_image_path, "*.jpg"))
+            file_data["images"] = {
+                os.path.basename(
+                    img_path
+                ): f"data:image/jpeg;base64,{encode_image(img_path)}"
+                for img_path in image_paths
+            }
 
     typed_return = MinerUReturn(**file_data)
     return typed_return
