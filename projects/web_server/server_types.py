@@ -48,6 +48,15 @@ class PreprocBlockLine(BaseModel):
     index: Optional[Union[int, float, None]] = None
 
 
+class PreprocBlockSpan(BaseModel):
+    type: str
+    bbox: List[Union[int, float]]
+    group_id: Optional[int] = None
+    lines: Optional[List[Line]] = None
+    index: Optional[Union[int, float]] = None
+    virtual_lines: Optional[List[PreprocBlockLine]] = None
+
+
 class PreprocBlock(BaseModel):
     type: str
     bbox: List[Union[int, float]]
@@ -56,6 +65,7 @@ class PreprocBlock(BaseModel):
     page_num: Optional[str] = None
     page_size: Optional[List[float]] = None
     bbox_fs: Optional[List[Union[float, int]]] = None
+    blocks: Optional[List[PreprocBlockSpan]] = None
 
 
 class PdfInfo(BaseModel):
@@ -115,3 +125,4 @@ class MinerUReturn(BaseModel):
     info: Info
     content_list: List[ContentItem]
     md_content: Optional[str] = None
+    images: Optional[dict[str, str]] = None
