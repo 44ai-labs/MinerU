@@ -29,7 +29,7 @@ services:
               capabilities: [gpu]
 
   mineru-api:
-    image: mineru:latest
+    image: 44ai/44ai-mineru:2.7.1
     container_name: mineru-api
     restart: always
     profiles: ["api"]
@@ -37,6 +37,7 @@ services:
       - 8000:8000
     environment:
       MINERU_MODEL_SOURCE: local
+      API_KEY: mamaistdiebeste
     entrypoint: mineru-api
     command:
       --host 0.0.0.0

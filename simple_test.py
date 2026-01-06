@@ -10,7 +10,11 @@ import httpx
 from pathlib import Path
 import json
 import time
+import os
 from mineru_types import MinerUResult
+
+# API Key for Bearer authentication
+API_KEY = os.getenv("API_KEY", "mamaistdiebeste")
 
 
 def test_file_parse_endpoint():
@@ -58,7 +62,8 @@ def test_file_parse_endpoint():
     
     try:
         print(f"📤 Sending request to {api_url}...")
-        response = requests.post(api_url, files=files, data=data, timeout=300)
+        headers = {"Authorization": f"Bearer {API_KEY}"}
+        response = requests.post(api_url, files=files, data=data, headers=headers, timeout=300)
         
         # Close the file
         files[0][1][1].close()
@@ -158,7 +163,8 @@ def test_multiple_files():
     
     try:
         print(f"📤 Sending multi-file request...")
-        response = requests.post(api_url, files=files, data=data, timeout=600)
+        headers = {"Authorization": f"Bearer {API_KEY}"}
+        response = requests.post(api_url, files=files, data=data, headers=headers, timeout=600)
         
         # Close all files
         for f in files:
@@ -235,7 +241,8 @@ async def send_single_file_async(client: httpx.AsyncClient, api_url: str, file_p
                 "response_format_zip": False,
             }
             
-            response = await client.post(api_url, files=files, data=data, timeout=300.0)
+            headers = {"Authorization": f"Bearer {API_KEY}"}
+            response = await client.post(api_url, files=files, data=data, headers=headers, timeout=300.0)
         
         elapsed_time = time.time() - start_time
         
@@ -334,23 +341,125 @@ async def test_parallel_single_files():
         print(f"  {status} {result['file']}: {result['time']:.2f}s")
 
 
+def test_warmup():
+    """Warmup test to check API key and process demo files"""
+    
+    api_url = "http://127.0.0.1:8000/file_parse"
+    demo_dir = Path(__file__).parent / "demo" / "pdfs"
+    
+    # Check API key
+    print("\n🔑 Checking API Key...")
+    if not API_KEY:
+        print("❌ No API_KEY configured!")
+        return False
+    print(f"✅ API Key configured: {API_KEY[:10]}...")
+    
+    # Check if demo files exist
+    demo_files = list(demo_dir.glob("*.pdf"))
+    if not demo_files:
+        print(f"❌ No demo files found in {demo_dir}")
+        return False
+    
+    print(f"\n📁 Found {len(demo_files)} demo files:")
+    for f in demo_files:
+        print(f"  - {f.name}")
+    
+    # Test with first demo file for warmup
+    test_file = demo_files[0]
+    print(f"\n🔥 Warming up with: {test_file.name}")
+    
+    files = [("files", (test_file.name, open(test_file, "rb"), "application/pdf"))]
+    
+    data = {
+        "lang_list": ["latin", "en"],
+        "backend": "hybrid-auto-engine",
+        "parse_method": "auto",
+        "formula_enable": False,
+        "table_enable": True,
+        "return_md": True,
+        "return_middle_json": False,
+        "return_model_output": True,
+        "return_content_list": True,
+        "return_images": True,
+        "response_format_zip": False,
+    }
+    
+    try:
+        start_time = time.time()
+        headers = {"Authorization": f"Bearer {API_KEY}"}
+        response = requests.post(api_url, files=files, data=data, headers=headers, timeout=300)
+        
+        files[0][1][1].close()
+        elapsed = time.time() - start_time
+        
+        if response.status_code == 200:
+            print(f"✅ Warmup successful! ({elapsed:.2f}s)")
+            result = response.json()
+            
+            for filename, content in result.get('results', {}).items():
+                md_content = content.get('md_content', None)
+                content_list = content.get('content_list', None)
+                if content_list:
+                    content_list = json.loads(content_list)
+                images = content.get('images', None)
+                
+                # Parse and validate with Pydantic model
+                try:
+                    mineru_result = MinerUResult(
+                        content_list=content_list,
+                        md_content=md_content,
+                        images=images
+                    )
+                    print("✅ Pydantic validation passed")
+                except Exception as e:
+                    print(f"❌ Pydantic validation failed: {str(e)}")
+                    return False
+                
+                if md_content:
+                    preview = md_content[:150].replace('\n', ' ')
+                    print(f"📄 Preview: {preview}...")
+            
+            return True
+        else:
+            print(f"❌ Warmup failed: {response.status_code}")
+            print(f"Response: {response.text[:200]}")
+            return False
+            
+    except requests.exceptions.ConnectionError:
+        print("❌ Connection error - is the API server running?")
+        return False
+    except Exception as e:
+        print(f"❌ Error: {str(e)}")
+        return False
+
+
 if __name__ == "__main__":
     print("=" * 60)
     print("MinerU API Endpoint Test")
     print("=" * 60)
     
+    # Run warmup test first
+    print("\n" + "=" * 60)
+    print("Warmup Test")
+    print("=" * 60)
+    warmup_success = test_warmup()
+    
+    if not warmup_success:
+        print("\n⚠️ Warmup failed, skipping other tests")
+        exit(1)
+    
     # Test single file
-    test_file_parse_endpoint()
+    # test_file_parse_endpoint()
     
     # Test multiple files in one request
     # test_multiple_files()
     
     # Test parallel single file requests
-    print("\n" + "=" * 60)
-    print("Testing Parallel Single File Requests")
-    print("=" * 60)
-    asyncio.run(test_parallel_single_files())
-    
-    print("\n" + "=" * 60)
-    print("Test completed")
-    print("=" * 60)
+    # print("\n" + "=" * 60)
+    # print("Testing Parallel Single File Requests")
+    # print("=" * 60)
+    # asyncio.run(test_parallel_single_files())
+    # 
+    # print("\n" + "=" * 60)
+    # print("Test completed")
+    # print("=" * 60)

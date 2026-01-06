@@ -9,9 +9,10 @@ import click
 import zipfile
 from pathlib import Path
 import glob
-from fastapi import Depends, FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import Depends, FastAPI, HTTPException, UploadFile, File, Form, Request, Header
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, FileResponse
+from contextlib import asynccontextmanager
 from starlette.background import BackgroundTask
 from typing import List, Optional
 from loguru import logger
@@ -29,6 +30,39 @@ from mineru.version import __version__
 
 # 并发控制器
 _request_semaphore: Optional[asyncio.Semaphore] = None
+
+
+def verify_bearer_token(request: Request, authorization: Optional[str] = Header(None)):
+    expected_key = request.app.state.api_key
+    if not expected_key:
+        # If no API key is configured, skip authentication
+        return
+    
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401, detail="Missing or malformed Authorization header"
+        )
+
+    token = authorization.split("Bearer ")[1].strip()
+    if token != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Initialize API key from environment
+    api_key = os.getenv("API_KEY", "")
+    app.state.api_key = api_key
+    if api_key:
+        logger.info("API key authentication enabled")
+    else:
+        logger.info("API key authentication disabled (no API_KEY set)")
+    
+    yield
+    
+    # Shutdown: cleanup if needed
+    pass
+
 
 # 并发控制依赖函数
 async def limit_concurrency():
@@ -48,6 +82,7 @@ def create_app():
     # To disable the FastAPI docs and schema endpoints, set the environment variable MINERU_API_ENABLE_FASTAPI_DOCS=0.
     enable_docs = str(os.getenv("MINERU_API_ENABLE_FASTAPI_DOCS", "1")).lower() in ("1", "true", "yes")
     app = FastAPI(
+        lifespan=lifespan,
         openapi_url="/openapi.json" if enable_docs else None,
         docs_url="/docs" if enable_docs else None,
         redoc_url="/redoc" if enable_docs else None,
@@ -105,7 +140,7 @@ def get_infer_result(file_suffix_identifier: str, pdf_name: str, parse_dir: str)
     return None
 
 
-@app.post(path="/file_parse", dependencies=[Depends(limit_concurrency)])
+@app.post(path="/file_parse", dependencies=[Depends(limit_concurrency), Depends(verify_bearer_token)])
 async def parse_pdf(
         files: List[UploadFile] = File(..., description="Upload pdf or image files for parsing"),
         output_dir: str = Form("./output", description="Output local directory"),

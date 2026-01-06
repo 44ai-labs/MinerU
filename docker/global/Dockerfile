@@ -18,12 +18,23 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install mineru latest
-RUN python3 -m pip install -U 'mineru[core]>=2.7.0' --break-system-packages && \
+# Copy MinerU source code
+COPY . /app/mineru
+WORKDIR /app/mineru
+
+# Install mineru from source
+RUN python3 -m pip install -U -e '.[all]' --break-system-packages && \
     python3 -m pip cache purge
 
 # Download models and update the configuration file
 RUN /bin/bash -c "mineru-models-download -s huggingface -m all"
 
-# Set the entry point to activate the virtual environment and run the command line tool
-ENTRYPOINT ["/bin/bash", "-c", "export MINERU_MODEL_SOURCE=local && exec \"$@\"", "--"]
+# Copy entrypoint script
+COPY docker/global/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Expose API port
+EXPOSE 8000
+
+# Set the entry point to start API server and run warmup
+ENTRYPOINT ["/entrypoint.sh"]
