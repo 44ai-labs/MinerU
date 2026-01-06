@@ -38,13 +38,13 @@ services:
     environment:
       MINERU_MODEL_SOURCE: local
       API_KEY: mamaistdiebeste
-    entrypoint: mineru-api
-    command:
-      --host 0.0.0.0
-      --port 8000
-      # parameters for vllm-engine
-      # --data-parallel-size 2  # If using multiple GPUs, increase throughput using vllm's multi-GPU parallel mode
-      # --gpu-memory-utilization 0.5  # If running on a single GPU and encountering VRAM shortage, reduce the KV cache size by this parameter, if VRAM issues persist, try lowering it further to `0.4` or below.
+    # entrypoint: mineru-api
+    # command:
+    #   --host 0.0.0.0
+    #   --port 8000
+    #   # parameters for vllm-engine
+    #   # --data-parallel-size 2  # If using multiple GPUs, increase throughput using vllm's multi-GPU parallel mode
+    #   # --gpu-memory-utilization 0.5  # If running on a single GPU and encountering VRAM shortage, reduce the KV cache size by this parameter, if VRAM issues persist, try lowering it further to `0.4` or below.
     ulimits:
       memlock: -1
       stack: 67108864
