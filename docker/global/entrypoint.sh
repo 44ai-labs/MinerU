@@ -6,16 +6,21 @@ export MINERU_MODEL_SOURCE=local
 # Default API key
 export MINERU_API_KEY="${MINERU_API_KEY:-mamaistdiebeste}"
 export API_KEY="${API_KEY:-$MINERU_API_KEY}"
+export PORT="${PORT:-8000}"
 
 # Start the FastAPI server in the background
 echo "🚀 Starting MinerU FastAPI server..."
-mineru-api --host 0.0.0.0 --port 8000 &
+mineru-api --host 0.0.0.0 --port $PORT &
 API_PID=$!
+
+# TODO:
+# start mineru on 8010
+# test with test from 
 
 # Wait for the server to be ready
 echo "⏳ Waiting for server to be ready..."
 for i in {1..30}; do
-    if curl -s http://localhost:8000/docs > /dev/null 2>&1; then
+    if curl -s http://localhost:$PORT/docs > /dev/null 2>&1; then
         echo "✅ Server is ready!"
         break
     fi
@@ -29,6 +34,7 @@ done
 # Run warmup test
 echo "🔥 Running warmup test..."
 cd /app/mineru
+export MINERU_API_PORT=$PORT
 if python3 simple_test.py; then
     echo "✅ Warmup test passed!"
 else
@@ -42,6 +48,6 @@ if [ $# -gt 0 ]; then
     exec "$@"
 else
     # Otherwise, keep the API server running and wait
-    echo "🎉 MinerU API is ready and running on port 8000"
+    echo "🎉 MinerU API is ready and running on port $PORT"
     wait $API_PID
 fi
