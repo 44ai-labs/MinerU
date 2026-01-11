@@ -34,11 +34,11 @@ services:
     restart: always
     profiles: ["api"]
     ports:
-      - 8000:8000
+      - 8010:8000
     environment:
       MINERU_MODEL_SOURCE: local
       API_KEY: mamaistdiebeste
-      PORT: 8010
+      PORT: 8000
     # entrypoint: mineru-api
     # command:
     #   --host 0.0.0.0
