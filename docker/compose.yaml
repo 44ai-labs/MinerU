@@ -38,6 +38,7 @@ services:
     environment:
       MINERU_MODEL_SOURCE: local
       API_KEY: mamaistdiebeste
+      PORT: 8010
     # entrypoint: mineru-api
     # command:
     #   --host 0.0.0.0
