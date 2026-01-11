@@ -17,6 +17,32 @@ from mineru_types import MinerUResult
 API_KEY = os.getenv("API_KEY", "mamaistdiebeste")
 
 
+def extract_mineru_result(content: dict) -> MinerUResult:
+    """Extract and parse MinerU result from API response content.
+    
+    Args:
+        content: Dictionary containing the API response data
+        
+    Returns:
+        MinerUResult: Parsed Pydantic model
+    """
+    md_content = content.get('md_content', None)
+    content_list = content.get('content_list', None)
+    if content_list:
+        content_list = json.loads(content_list)
+    images = content.get('images', None)
+    middle_json = content.get('middle_json', None)
+    if middle_json:
+        middle_json = json.loads(middle_json)
+    
+    return MinerUResult(
+        middle_json=middle_json,
+        content_list=content_list,
+        md_content=md_content,
+        images=images
+    )
+
+
 def test_file_parse_endpoint():
     """Test the /file_parse endpoint with files from test_files directory"""
     
@@ -53,7 +79,7 @@ def test_file_parse_endpoint():
         "formula_enable": False,
         "table_enable": True,
         "return_md": True,
-        "return_middle_json": False,
+        "return_middle_json": True,
         "return_model_output": True,
         "return_content_list": True,
         "return_images": True,
@@ -79,17 +105,8 @@ def test_file_parse_endpoint():
             # Show markdown content preview if available
             for filename, content in result.get('results', {}).items():
                 print(f"KEYS for {filename}: {list(content.keys())}")
-                md_content = content.get('md_content', None)
-                content_list = content.get('content_list', None)
-                if content_list:
-                    content_list = json.loads(content_list)
-                images = content.get('images', None)
-
-                mineru_result = MinerUResult(
-                    content_list=content_list,
-                    md_content=md_content,
-                    images=images
-                )
+                mineru_result = extract_mineru_result(content)
+                
                 if 'md_content' in content and content['md_content']:
                     md_preview = content['md_content'][:200]
                     print(f"\n📄 Markdown preview for {filename}:")
@@ -154,7 +171,7 @@ def test_multiple_files():
         "formula_enable": False,
         "table_enable": True,
         "return_md": True,
-        "return_middle_json": False,
+        "return_middle_json": True,
         "return_model_output": True,
         "return_content_list": True,
         "return_images": True,
@@ -178,17 +195,7 @@ def test_multiple_files():
             # Parse and save results for each file
             for filename, content in result.get('results', {}).items():
                 print(f"\nKEYS for {filename}: {list(content.keys())}")
-                md_content = content.get('md_content', None)
-                content_list = content.get('content_list', None)
-                if content_list:
-                    content_list = json.loads(content_list)
-                images = content.get('images', None)
-
-                mineru_result = MinerUResult(
-                    content_list=content_list,
-                    md_content=md_content,
-                    images=images
-                )
+                mineru_result = extract_mineru_result(content)
                 
                 if 'md_content' in content and content['md_content']:
                     md_preview = content['md_content'][:200]
@@ -234,7 +241,7 @@ async def send_single_file_async(client: httpx.AsyncClient, api_url: str, file_p
                 "formula_enable": False,
                 "table_enable": True,
                 "return_md": True,
-                "return_middle_json": False,
+                "return_middle_json": True,
                 "return_model_output": True,
                 "return_content_list": True,
                 "return_images": True,
@@ -252,17 +259,7 @@ async def send_single_file_async(client: httpx.AsyncClient, api_url: str, file_p
             
             # Process and save results
             for filename, content in result.get('results', {}).items():
-                md_content = content.get('md_content', None)
-                content_list = content.get('content_list', None)
-                if content_list:
-                    content_list = json.loads(content_list)
-                images = content.get('images', None)
-
-                mineru_result = MinerUResult(
-                    content_list=content_list,
-                    md_content=md_content,
-                    images=images
-                )
+                mineru_result = extract_mineru_result(content)
                 
                 # Save MinerUResult as JSON
                 output_response_dir = Path(f"output_path/{file_path.stem}")
@@ -344,7 +341,8 @@ async def test_parallel_single_files():
 def test_warmup():
     """Warmup test to check API key and process demo files"""
     
-    api_url = "http://127.0.0.1:8000/file_parse"
+    port = os.getenv("MINERU_API_PORT", "8000")
+    api_url = f"http://127.0.0.1:{port}/file_parse"
     demo_dir = Path(__file__).parent / "demo" / "pdfs"
     
     # Check API key
@@ -377,7 +375,7 @@ def test_warmup():
         "formula_enable": False,
         "table_enable": True,
         "return_md": True,
-        "return_middle_json": False,
+        "return_middle_json": True,
         "return_model_output": True,
         "return_content_list": True,
         "return_images": True,
@@ -397,24 +395,15 @@ def test_warmup():
             result = response.json()
             
             for filename, content in result.get('results', {}).items():
-                md_content = content.get('md_content', None)
-                content_list = content.get('content_list', None)
-                if content_list:
-                    content_list = json.loads(content_list)
-                images = content.get('images', None)
-                
                 # Parse and validate with Pydantic model
                 try:
-                    mineru_result = MinerUResult(
-                        content_list=content_list,
-                        md_content=md_content,
-                        images=images
-                    )
+                    mineru_result = extract_mineru_result(content)
                     print("✅ Pydantic validation passed")
                 except Exception as e:
                     print(f"❌ Pydantic validation failed: {str(e)}")
                     return False
                 
+                md_content = content.get('md_content')
                 if md_content:
                     preview = md_content[:150].replace('\n', ' ')
                     print(f"📄 Preview: {preview}...")

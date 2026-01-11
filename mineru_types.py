@@ -83,6 +83,13 @@ class PdfInfo(BaseModel):
     para_blocks: List[PreprocBlock]
 
 
+class MiddleJsonPageInfo(BaseModel):
+    para_blocks: List[PreprocBlock]
+    discarded_blocks: List[DiscardedBlock] = []
+    page_size: List[float]
+    page_idx: int
+
+
 class LayoutDet(BaseModel):
     category_id: int
     poly: List[Union[int, float]]
@@ -108,6 +115,14 @@ class Info(BaseModel):
     _version_name: Optional[str] = None
 
 
+class MiddleJson(BaseModel):
+    pdf_info: List[MiddleJsonPageInfo]
+    _backend: Optional[str] = None
+    _ocr_enable: Optional[bool] = None
+    _vlm_ocr_enable: Optional[bool] = None
+    _version_name: Optional[str] = None
+
+
 class ContentItem(BaseModel):
     type: str
     text: Optional[str] = None
@@ -129,7 +144,7 @@ class MinerUReturn(BaseModel):
 
 class MinerUResult(BaseModel):
     # model_output: List[Layout]
-    # middle_json: Optional[Info] = None
+    middle_json: MiddleJson
     content_list: List[ContentItem]
     md_content: Optional[str] = None
     images: Optional[dict[str, str]] = None
